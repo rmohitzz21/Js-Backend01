@@ -9,7 +9,7 @@ const app = express();
 // Configuring CORS to allow requests from a specific origin
 app.use(cors({
     origin: process.env.CORS_ORIGIN, // Allowed origin set via environment variables
-    Credential: true // This should be "credentials" instead of "Credential" (case-sensitive)
+    credentials: true // This should be "credentials" instead of "Credential" (case-sensitive)
 }));
 
 // Middleware to parse JSON request bodies with a size limit of 16kb
@@ -28,6 +28,16 @@ app.use(express.static("public"));
 
 // Middleware to parse cookies in incoming requests
 app.use(cookieParser());
+
+
+// routes import
+
+import userRouter from './routes/user.routes.js'
+
+// routes declaration
+
+app.use("/api/v1/users", userRouter)
+
 
 // Exporting the app instance for use in other files
 export { app };
