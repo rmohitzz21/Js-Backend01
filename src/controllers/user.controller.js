@@ -11,17 +11,17 @@ const registerUser = asyncHandler(async (req, res) => {
     
 
     // Validation
-   const {fullName, email, username, password} =  req.body // Get User Details From Frontend
-    console.log("fullName : ",fullName);
+   const {fullname, email, username, password} =  req.body // Get User Details From Frontend
+    console.log("fullname : ",fullname);
 
     if (
-        [fullName, email, username, password].some((field) =>  field?.trim() === "")
+        [fullname, email, username, password].some((field) =>  field?.trim() === "")
     ){
         throw new ApiError(400, "All Fields Are Required")
     }
 
     // check if user already exists : Username and Emai
-    const existedUser  = User.findOne({
+    const existedUser  =await User.findOne({
         $or: [{ username },{ email }]
     })
 
@@ -29,11 +29,19 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409, "User with email and username Already Exists")
     }
 
+    console.log("req.files : ",req.files);
+    
 
     // Check For image, Avatar
    const avtarLocalPath =  req.files?.avtar[0]?.path // Check For image, Avatar
-   const coverImageLocalPath = req.files?.coverImage[0]?.path 
+
+//    const coverImageLocalPath = req.files?.coverImage[0]?.path 
    
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0 ){
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+
    if (!avtarLocalPath){
          throw new ApiError(400, "Avtar Image is Required")
    }
@@ -43,16 +51,16 @@ const registerUser = asyncHandler(async (req, res) => {
    const avtar = await uploadOnCloudinary(avtarLocalPath)
    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-   if(!avtar || !coverImage){
-       throw new ApiError(500, "Avtar and Cover Image is required")
+   if(!avtar){
+       throw new ApiError(500, "Avtar is required")
    }
 
     // create user object - create entry in database
 
     const user = await User.create({
-        fullName,
+        fullname,
         avtar: avtar.url,
-        coverImage: coverImage.url,
+        coverImage: coverImage?.url || "",
         email,
         password,
         username: username.toLowerCase()
@@ -61,9 +69,9 @@ const registerUser = asyncHandler(async (req, res) => {
     // remove password and refresh token from response
 
 
-    const  createdUser = await User.findById(user._id).create(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
-    )
+    );
 
     // check user creation
 
